@@ -128,7 +128,7 @@ void img_dither(Image* img, std::string& returnStr)
 			if (img->channels == 4)
 			{
 				unsigned alpha = color >> 24;
-				if (alpha < 255)
+				if (alpha < 200)
 				{
 					returnStr[x + y * w] = '-';
 					continue;
