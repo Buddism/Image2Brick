@@ -2,6 +2,36 @@
 
 //https://bisqwit.iki.fi/story/howto/dither/jy/
 
+//#define MAP16x16
+#define MAP8x8
+//#define MAP4x4
+//#define MAP2x2
+
+#ifdef MAP16x16
+//  16x16 Bayer Dithering Matrix
+static const unsigned char map[16 * 16] = {
+	  0, 191,  48, 239,  12, 203,  60, 251,   3, 194,  51, 242,  15, 206,  63, 254,
+	127,  64, 175, 112, 139,  76, 187, 124, 130,  67, 178, 115, 142,  79, 190, 127,
+	 32, 223,  16, 207,  44, 235,  28, 219,  35, 226,  19, 210,  47, 238,  31, 222,
+	159,  96, 143,  80, 171, 108, 155,  92, 162,  99, 146,  83, 174, 111, 158,  95,
+	  8, 199,  56, 247,   4, 195,  52, 243,  11, 202,  59, 250,   7, 198,  55, 246,
+	135,  72, 183, 120, 131,  68, 179, 116, 138,  75, 186, 123, 134,  71, 182, 119,
+	 40, 231,  24, 215,  36, 227,  20, 211,  43, 234,  27, 218,  39, 230,  23, 214,
+	167, 104, 151,  88, 163, 100, 147,  84, 170, 107, 154,  91, 166, 103, 150,  87,
+	  2, 193,  50, 241,  14, 205,  62, 253,   1, 192,  49, 240,  13, 204,  61, 252,
+	129,  66, 177, 114, 141,  78, 189, 126, 128,  65, 176, 113, 140,  77, 188, 125,
+	 34, 225,  18, 209,  46, 237,  30, 221,  33, 224,  17, 208,  45, 236,  29, 220,
+	161,  98, 145,  82, 173, 110, 157,  94, 160,  97, 144,  81, 172, 109, 156,  93,
+	 10, 201,  58, 249,   6, 197,  54, 245,   9, 200,  57, 248,   5, 196,  53, 244,
+	137,  74, 185, 122, 133,  70, 181, 118, 136,  73, 184, 121, 132,  69, 180, 117,
+	 42, 233,  26, 217,  38, 229,  22, 213,  41, 232,  25, 216,  37, 228,  21, 212,
+	169, 106, 153,  90, 165, 102, 149,  86, 168, 105, 152,  89, 164, 101, 148,  85
+};
+constexpr unsigned int map_size = 16 * 16;
+constexpr unsigned int map_scale = 16 - 1;
+#endif // MAP16x16
+
+#ifdef MAP8x8
 /* 8x8 threshold map (note: the patented pattern dithering algorithm uses 4x4) */
 static const unsigned char map[8 * 8] = {
 	 0,48,12,60, 3,51,15,63,
@@ -13,16 +43,31 @@ static const unsigned char map[8 * 8] = {
 	10,58, 6,54, 9,57, 5,53,
 	42,26,38,22,41,25,37,21
 };
+constexpr unsigned int map_size = 8 * 8;
+constexpr unsigned int map_scale = 8 - 1;
+#endif //MAP8x8
 
+#ifdef MAP4x4
 /* 4x4 threshold map */
-//static const unsigned char map[4 * 4] = {
-//	0, 12, 3, 15,
-//	8, 4, 11, 7,
-//	2, 14, 1, 13,
-//	10, 6, 9, 5 
-//};
+static const unsigned char map[4 * 4] = {
+	0, 12, 3, 15,
+	8, 4, 11, 7,
+	2, 14, 1, 13,
+	10, 6, 9, 5
+};
+constexpr unsigned int map_size = 4 * 4;
+constexpr unsigned int map_scale = 4 - 1;
+#endif //MAP4x4
 
-/* Palette */
+#ifdef MAP2x2
+/* 4x4 threshold map */
+static const unsigned char map[2 * 2] = {
+	0, 2,
+	3, 1
+};
+constexpr unsigned int map_size = 4 * 4;
+constexpr unsigned int map_scale = 2 - 1;
+#endif //MAP2x2
 
 /* Luminance for each palette entry, to be initialized as soon as the program begins */
 static unsigned luma[64];
@@ -42,7 +87,7 @@ double ColorCompare(int r1, int g1, int b1, int r2, int g2, int b2)
 }
 struct MixingPlan
 {
-	unsigned colors[64];
+	unsigned colors[map_size];
 };
 MixingPlan DeviseBestMixingPlan(unsigned color)
 {
@@ -51,7 +96,7 @@ MixingPlan DeviseBestMixingPlan(unsigned color)
 
 	const double X = 0.09;  // Error multiplier d:0.09
 	int e[3] = { 0, 0, 0 }; // Error accumulator
-	for (unsigned c = 0; c < 64; ++c)
+	for (unsigned c = 0; c < map_size; ++c)
 	{
 		// Current temporary value
 		int t[3] = { src[0] + e[0] * X, src[1] + e[1] * X, src[2] + e[2] * X };
@@ -82,7 +127,7 @@ MixingPlan DeviseBestMixingPlan(unsigned color)
 		e[2] += src[2] - pc[2];
 	}
 	// Sort the colors according to luminance
-	std::sort(result.colors, result.colors + 64, PaletteCompareLuma);
+	std::sort(result.colors, result.colors + map_size, PaletteCompareLuma);
 	return result;
 }
 
@@ -107,7 +152,7 @@ unsigned getClosestColor(unsigned color)
 	return chosen;
 }
 
-void img_dither(Image* img, std::string& returnStr)
+unsigned int img_dither(Image* img, std::string& returnStr)
 {
 	unsigned w = img->width, h = img->height;
 
@@ -120,6 +165,7 @@ void img_dither(Image* img, std::string& returnStr)
 		luma[c] = r * 299 + g * 587 + b * 114;
 	}
 
+	unsigned int numBricks = 0;
 #pragma omp parallel for
 	for (unsigned y = 0; y < h; ++y)
 		for (unsigned x = 0; x < w; ++x)
@@ -135,18 +181,21 @@ void img_dither(Image* img, std::string& returnStr)
 				}
 				color &= 0xFFFFFF; //strip off the ALPHA
 			}
-			unsigned map_value = map[(x & 7) + ((y & 7) << 3)];
+			unsigned map_value = map[(x & map_scale) + ((y & map_scale) << 3)];
 			MixingPlan plan = DeviseBestMixingPlan(color);
-			
+
 			//unsigned index = getClosestColor(color);
 			unsigned index = plan.colors[map_value];
 			if (index > exportChars.length())
 			{
 				std::cout << "ERROR: INDEX > EXPORTCHAR LENGTH\n";
-				return;
+				return numBricks;
 			}
 			char chr = exportChars[index];
 
 			returnStr[x + y * w] = chr;
+			numBricks++;
 		}
+
+	return numBricks;
 }

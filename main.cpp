@@ -79,7 +79,9 @@ int main(int argc, char* argv[])
 
 	std::string retStr;
 	retStr.resize(img->width * img->height);
-	img_dither(img, retStr);
+	auto numBricks = img_dither(img, retStr);
+
+	std::cout << "IMG HAS " << numBricks << " NUM BRICKS\n";
 
 	retStr.insert(0, detailStr);
 

@@ -6,6 +6,8 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
+#include <span>
+#include <array>
 
 #include <thread>
 #include <chrono>
@@ -26,7 +28,7 @@
 #include "stb_image.h"
 #include "stb_image_write.h"
 
-void img_dither(Image* img, std::string& returnStr);
+unsigned int img_dither(Image* img, std::string& returnStr);
 
 extern std::string dataspace;
 extern std::string exportChars;
