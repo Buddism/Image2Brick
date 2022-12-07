@@ -1,5 +1,4 @@
 #include "pch.h"
-
 //https://bisqwit.iki.fi/story/howto/dither/jy/
 
 //#define MAP16x16
@@ -152,9 +151,9 @@ unsigned getClosestColor(unsigned color)
 	return chosen;
 }
 
-unsigned int img_dither(Image* img, std::string& returnStr)
+unsigned int img_dither(Image* img, std::vector<uint8_t> &colorIDPixels)
 {
-	unsigned w = img->width, h = img->height;
+	unsigned width = img->width, height = img->height;
 
 	for (unsigned c = 0; c < numPalColors; ++c)
 	{
@@ -166,9 +165,10 @@ unsigned int img_dither(Image* img, std::string& returnStr)
 	}
 
 	unsigned int numBricks = 0;
+
 #pragma omp parallel for
-	for (unsigned y = 0; y < h; ++y)
-		for (unsigned x = 0; x < w; ++x)
+	for (int y = 0; y < height; ++y)
+		for (int x = 0; x < width; ++x)
 		{
 			unsigned color = img->getPixelRGBA(x, y);
 			if (img->channels == 4)
@@ -176,7 +176,7 @@ unsigned int img_dither(Image* img, std::string& returnStr)
 				unsigned alpha = color >> 24;
 				if (alpha < 200)
 				{
-					returnStr[x + y * w] = '-';
+					colorIDPixels[x + y * width] = -1;
 					continue;
 				}
 				color &= 0xFFFFFF; //strip off the ALPHA
@@ -186,14 +186,8 @@ unsigned int img_dither(Image* img, std::string& returnStr)
 
 			//unsigned index = getClosestColor(color);
 			unsigned index = plan.colors[map_value];
-			if (index > exportChars.length())
-			{
-				std::cout << "ERROR: INDEX > EXPORTCHAR LENGTH\n";
-				return numBricks;
-			}
-			char chr = exportChars[index];
 
-			returnStr[x + y * w] = chr;
+			colorIDPixels[x + y * width] = index;
 			numBricks++;
 		}
 

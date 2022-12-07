@@ -1,5 +1,11 @@
 #include "pch.h"
 
+#ifdef _DEBUG
+constexpr int WAIT_TO_CLOSE_TIME = 10;
+#else
+constexpr int WAIT_TO_CLOSE_TIME = 1;
+#endif
+
 void setClipboard(const char* textToSave)
 {
 	if (textToSave == nullptr)
@@ -41,7 +47,35 @@ bool readColorset()
 
 void close_wait(int wait = 5)
 {
+	std::cout << std::format("WAITING FOR {} SECONDS\n", wait);
 	std::this_thread::sleep_for(std::chrono::seconds(wait));
+}
+
+std::string colorid_to_string(Image* img, std::vector<uint8_t> &colorIDPixels)
+{
+	std::string headerData = std::format("{} {}\n", img->width, img->height);
+	std::string dataStr; 
+
+	int wideWidth = img->width + 1;
+	dataStr.resize(wideWidth * img->height);
+
+#pragma omp parallel for
+	for (int y = 0; y < img->height; y++)
+	{
+		for (int x = 0; x < img->width; x++)
+		{
+			uint8_t colorID = colorIDPixels[x + y * img->width];
+			char color_chr = colorID < exportChars.length() ? exportChars[colorID] : '-';
+			dataStr[x + y * wideWidth] = color_chr;
+		}
+	}
+
+	//insert \n into the last char of each row
+	for (int y = 0; y < img->height; y++)
+		dataStr[img->width + y * wideWidth] = '\n';
+
+	dataStr.insert(0, headerData);
+	return dataStr;
 }
 
 int main(int argc, char* argv[])
@@ -54,7 +88,7 @@ int main(int argc, char* argv[])
 
 	std::string pngFilePath = dataspace + "input.png";
 	if (argc == 2)
-	{ 
+	{
 		bool exists = std::filesystem::exists(argv[1]);
 		if (exists)
 			pngFilePath = argv[1];
@@ -73,23 +107,25 @@ int main(int argc, char* argv[])
 		close_wait();
 	}
 
-	std::stringstream ss;
-	ss << img->width << " " << img->height << "\n";
-	std::string detailStr = ss.str();
+	if (numPalColors == 0)
+	{
+		std::cout << "ERR: numPalColors is ZERO!" << "\n";
+		close_wait();
+		return 1;
+	}
+	
+	std::vector<uint8_t> colorIDPixels;
+	colorIDPixels.resize(img->width * img->height);
 
-	std::string retStr;
-	retStr.resize(img->width * img->height);
-	auto numBricks = img_dither(img, retStr);
-
+	unsigned int numBricks = img_dither(img, colorIDPixels);
 	std::cout << "IMG HAS " << numBricks << " NUM BRICKS\n";
 
-	retStr.insert(0, detailStr);
 
 	std::cout << "FINISHED\n";
-
-	setClipboard(retStr.c_str());
+	std::string dataString = colorid_to_string(img, colorIDPixels);
+	setClipboard(dataString.c_str());
 
 	delete img;
 
-	close_wait(1);
+	close_wait(WAIT_TO_CLOSE_TIME);
 }
