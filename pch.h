@@ -23,10 +23,8 @@
 #define STB_IMAGE_STATIC
 #define __STDC_LIB_EXT1__
 #define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 
 #include "stb_image.h"
-#include "stb_image_write.h"
 
 unsigned int img_dither(Image* img, std::string& returnStr);
 
