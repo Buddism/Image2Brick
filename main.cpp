@@ -53,11 +53,10 @@ void close_wait(int wait = 5)
 
 std::string colorid_to_string(Image* img, std::vector<uint8_t> &colorIDPixels)
 {
-	std::string headerData = std::format("{} {}\n", img->width, img->height);
+	std::string headerData = std::format("width {}\nheight {}\nDATA:\n", img->width, img->height);
 	std::string dataStr; 
 
-	int wideWidth = img->width + 1;
-	dataStr.resize(wideWidth * img->height);
+	dataStr.resize(img->width * img->height);
 
 #pragma omp parallel for
 	for (int y = 0; y < img->height; y++)
@@ -65,14 +64,10 @@ std::string colorid_to_string(Image* img, std::vector<uint8_t> &colorIDPixels)
 		for (int x = 0; x < img->width; x++)
 		{
 			uint8_t colorID = colorIDPixels[x + y * img->width];
-			char color_chr = colorID < exportChars.length() ? exportChars[colorID] : '-';
-			dataStr[x + y * wideWidth] = color_chr;
+			char color_chr = colorID < exportChars.length() ? exportChars[colorID] : 255;
+			dataStr[x + y * img->width] = color_chr;
 		}
 	}
-
-	//insert \n into the last char of each row
-	for (int y = 0; y < img->height; y++)
-		dataStr[img->width + y * wideWidth] = '\n';
 
 	dataStr.insert(0, headerData);
 	return dataStr;
@@ -80,6 +75,10 @@ std::string colorid_to_string(Image* img, std::vector<uint8_t> &colorIDPixels)
 
 int main(int argc, char* argv[])
 {
+	//generate char table
+	for(unsigned int i = 1; i < 255; i++) //last char is reserved for alpha
+		exportChars += unsigned char(i);
+
 	std::cout << "Have " << argc << " arguments:" << std::endl;
 	for (int i = 0; i < argc; ++i) {
 		std::cout << argv[i] << std::endl;
@@ -105,6 +104,8 @@ int main(int argc, char* argv[])
 	{
 		std::cout << "ERR: colorset.txt NOT FOUND!" << "\n";
 		close_wait();
+		return 1;
+	}
 	}
 
 	if (numPalColors == 0)
