@@ -94,6 +94,7 @@ int main(int argc, char* argv[])
 	}
 
 	Image* img = new Image();
+	std::unique_ptr<Image*> imgPtr = std::make_unique<Image*>(img);
 
 	if (!img->open(pngFilePath))
 	{
@@ -106,6 +107,11 @@ int main(int argc, char* argv[])
 		close_wait();
 		return 1;
 	}
+	if (!bricklist.readBrickList())
+	{
+		std::cout << "ERR: bricklist.txt NOT FOUND!" << "\n";
+		close_wait();
+		return 2;
 	}
 
 	if (numPalColors == 0)
@@ -121,12 +127,51 @@ int main(int argc, char* argv[])
 	unsigned int numBricks = img_dither(img, colorIDPixels);
 	std::cout << "IMG HAS " << numBricks << " NUM BRICKS\n";
 
+	GreedyBrick greedy (img, colorIDPixels);
+	std::vector<greedyListItem> greedyList = greedy.greedyBrick();
+
+	std::cout << std::format("greedyList num items: {}\n", greedyList.size());
+	for (auto& item : greedyList)
+	{
+		brickItemIndex brickID = item.brickid;
+		brickListItem& brick = bricklist.info[brickID];
+
+		std::cout << std::format("sizeX:{} sizeY:{} posX:{} posY:{}, uiName: ({}), rot: {}\n", brick.sizeX, brick.sizeY, item.pos.x, item.pos.y, brick.uiName, item.rotation);
+	}
+
+	std::string lazy_to_brick;
+	int calculated_volume = 0;
+	for (auto& item : greedyList)
+	{
+		brickItemIndex brickID = item.brickid;
+		brickListItem& brick = bricklist.info[brickID];
+		calculated_volume += brick.volume;
+
+		vec2 pos = item.pos;
+		vec2<float> center = { 0, 0 };
+		if (!item.rotation)
+		{
+			center.x = pos.x + brick.sizeX / 2.0f;
+			center.y = pos.y + brick.sizeY / 2.0f;
+		}
+		else {
+			center.x = pos.x + brick.sizeY / 2.0f;
+			center.y = pos.y + brick.sizeX / 2.0f;
+		}
+
+		lazy_to_brick += std::format("{} {} {} {} {}\n", center.x, center.y, item.colorID, item.rotation ? 1 : 0, brick.uiName);
+	}
+
+	int expected_Volume = img->width * img->height;
+	std::cout << std::format("expected_volume: {}, calculated_volume: {}, DIFF: {}\n", expected_Volume, calculated_volume, calculated_volume - expected_Volume);
+	float optimization_percent = ((float)greedyList.size() / (float)expected_Volume) * 100.0f;
+	std::cout << std::format("num_pixels: {}, num_bricks: {}, % of original: {:.2f}%\n", expected_Volume, greedyList.size(), optimization_percent);
 
 	std::cout << "FINISHED\n";
-	std::string dataString = colorid_to_string(img, colorIDPixels);
-	setClipboard(dataString.c_str());
+	setClipboard(lazy_to_brick.c_str());
 
-	delete img;
+	//std::string dataString = colorid_to_string(img, colorIDPixels);
+	//setClipboard(dataString.c_str());
 
 	close_wait(WAIT_TO_CLOSE_TIME);
 }

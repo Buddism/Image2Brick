@@ -504,7 +504,7 @@ STBIDEF int      stbi_is_16_bit_from_file(FILE *f);
 
 // for image formats that explicitly notate that they have premultiplied alpha,
 // we just return the colors as stored in the file. set this flag to force
-// unpremultiplication. results are undefined if the unpremultiply overflow.
+// unpremultiplication. results are undefinedColor if the unpremultiply overflow.
 STBIDEF void stbi_set_unpremultiply_on_load(int flag_true_if_should_unpremultiply);
 
 // indicate whether we should process iphone images back to canonical format,

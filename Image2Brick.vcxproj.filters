@@ -27,6 +27,12 @@
     <ClCompile Include="palette_dither.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GreedyBrick.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BrickList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pixel.h">
@@ -47,6 +53,15 @@
     <ClInclude Include="resource1.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="vec2.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GreedyBrick.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BrickList.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">
@@ -57,5 +72,10 @@
     <Image Include="..\..\..\Downloads\1x4.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="unused.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

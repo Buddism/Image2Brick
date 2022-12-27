@@ -184,8 +184,8 @@ unsigned int img_dither(Image* img, std::vector<uint8_t> &colorIDPixels)
 			unsigned map_value = map[(x & map_scale) + ((y & map_scale) << 3)];
 			MixingPlan plan = DeviseBestMixingPlan(color);
 
-			//unsigned index = getClosestColor(color);
-			unsigned index = plan.colors[map_value];
+			unsigned index = getClosestColor(color);
+			//unsigned index = plan.colors[map_value];
 
 			colorIDPixels[x + y * width] = index;
 			numBricks++;

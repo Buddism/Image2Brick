@@ -149,6 +149,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BrickList.cpp" />
+    <ClCompile Include="GreedyBrick.cpp" />
     <ClCompile Include="palette_dither.cpp" />
     <ClCompile Include="img.cpp" />
     <ClCompile Include="main.cpp" />
@@ -158,6 +160,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BrickList.h" />
+    <ClInclude Include="GreedyBrick.h" />
+    <ClInclude Include="vec2.h" />
     <ClInclude Include="img.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="pixel.h" />
@@ -170,6 +175,9 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\Downloads\1x4.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="unused.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
