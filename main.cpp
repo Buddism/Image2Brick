@@ -154,7 +154,7 @@ int main(int argc, char* argv[])
 		{
 			//third sort
 			if (i.colorID == j.colorID)
-				return i.rotation != j.rotation;
+				return i.rotation > j.rotation;
 
 			//secondary sort
 			return i.colorID > j.colorID;
