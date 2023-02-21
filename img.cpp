@@ -3,6 +3,7 @@
 Image::Image()
 {
 	data = NULL;
+	num_visible_pixels = 0;
 }
 
 Image::~Image()

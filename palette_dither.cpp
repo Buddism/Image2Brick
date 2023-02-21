@@ -130,26 +130,6 @@ MixingPlan DeviseBestMixingPlan(unsigned color)
 	return result;
 }
 
-unsigned getClosestColor(unsigned color)
-{
-	const int t[3] = { color >> 16, (color >> 8) & 0xFF, color & 0xFF };
-	double least_penalty = 1e99;
-	unsigned chosen = 0;
-	for (unsigned index = 0; index < numPalColors; ++index)
-	{
-		const unsigned pal_color = pal[index];
-		const int pc[3] = { pal_color >> 16, (pal_color >> 8) & 0xFF, pal_color & 0xFF };
-		//double penalty = ColorCompare(pc[0], pc[1], pc[2], t[0], t[1], t[2]);
-		double penalty = abs(pc[0] - t[0]) + abs(pc[1] - t[1]) + abs(pc[2] - t[2]);
-		if (penalty < least_penalty)
-		{
-			least_penalty = penalty;
-			chosen = index;
-		}
-	}
-
-	return chosen;
-}
 
 unsigned int img_dither(Image* img, std::vector<uint8_t> &colorIDPixels)
 {
@@ -181,14 +161,15 @@ unsigned int img_dither(Image* img, std::vector<uint8_t> &colorIDPixels)
 				}
 				color &= 0xFFFFFF; //strip off the ALPHA
 			}
+
 			unsigned map_value = map[(x & map_scale) + ((y & map_scale) << 3)];
 			MixingPlan plan = DeviseBestMixingPlan(color);
 
-			unsigned index = getClosestColor(color);
-			//unsigned index = plan.colors[map_value];
+			unsigned index = plan.colors[map_value];
 
 			colorIDPixels[x + y * width] = index;
 			numBricks++;
+			img->num_visible_pixels++;
 		}
 
 	return numBricks;

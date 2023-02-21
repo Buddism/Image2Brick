@@ -14,6 +14,6 @@ public:
 
 	unsigned char* data;
 	const char* filepath;
-	int width, height, channels, request_channels;
+	int width, height, channels, request_channels, num_visible_pixels;
 };
 

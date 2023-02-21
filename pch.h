@@ -35,6 +35,7 @@
 
 bool readBrickList();
 unsigned int img_dither(Image* img, std::vector<uint8_t>& colorIDPixels);
+unsigned int img_closest(Image* img, std::vector<uint8_t>& colorIDPixels);
 
 extern std::string dataspace;
 extern std::string exportChars;

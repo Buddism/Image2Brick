@@ -33,6 +33,9 @@
     <ClCompile Include="BrickList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="image_closest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pixel.h">

@@ -72,7 +72,7 @@ std::vector<greedyListItem> GreedyBrick::greedyBrick()
 				setBrickFitProccessed(x, y, brick2.sizeY, brick2.sizeX);
 			}
 
-			std::cout << std::format("uiname: {}\n", largestBrick.uiName);
+			//std::cout << std::format("uiname: {}\n", largestBrick.uiName);
 			//dump_processed();
 
 			data.push_back(listItem);
