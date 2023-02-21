@@ -32,12 +32,14 @@ void BrickList::add(int sizeX, int sizeY, std::string uiName)
 void BrickList::sortByVolume()
 {
 	//sorts by sizeX, then sizeY
-	std::sort(info.begin(), info.end(), [](brickListItem& a, brickListItem& b) {
+	auto brickSort = [](brickListItem& a, brickListItem& b)
+	{
 		if (a.sizeX == b.sizeY)
-		return a.sizeY < b.sizeY;
+			return a.sizeY < b.sizeY;
 
-	return a.sizeX < b.sizeX;
-		});
+		return a.sizeX < b.sizeX;
+	};
+	std::sort(info.begin(), info.end(), brickSort);
 
 	for (int i = 0; i < info.size(); i++)
 	{
@@ -67,7 +69,7 @@ bool BrickList::readBrickList()
 		ss >> sizeY;
 		ss.ignore(1);
 		std::getline(ss, uiName, '\n');
-		
+
 
 		add(sizeX, sizeY, uiName);
 
