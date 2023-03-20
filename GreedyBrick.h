@@ -13,6 +13,11 @@ struct brickListItem
 
 	int volume = sizeX * sizeY;
 	brickItemIndex id;
+
+	inline std::string toString()
+	{
+		return std::format("id({}): uiName: {}, sizeX: {}, sizeY: {}", id, uiName, sizeX, sizeY);
+	}
 };
 
 struct greedyListItem
@@ -38,13 +43,17 @@ class GreedyBrick
 {
 public:
 	GreedyBrick(const Image* _img, const std::vector<uint8_t>& colorIDPixels);
-	std::vector<greedyListItem> greedyBrick();
+	std::vector<greedyListItem> greedyBrick(bool primaryRotation);
+
+	void reset();
 private:
 	std::vector<PixelData> pixels;
 	const Image* img;
+	unsigned int width, height;
+
 
 	void dump_processed();
-	bool inBounds(int posX, int posY);
+	inline bool inBounds(int posX, int posY);
 	bool testBrickFit(const unsigned int posX, const unsigned int posY, const unsigned int scaleX, const unsigned int scaleY, const uint8_t testColorID);
 	void setBrickFitProccessed(const unsigned int posX, const unsigned int posY, const unsigned int scaleX, const unsigned int scaleY);
 	brickItemIndex findLargestBrick(const unsigned int posX, const unsigned int posY, const int colorID, const bool rotation);

@@ -142,9 +142,26 @@ int main(int argc, char* argv[])
 	std::cout << "IMG HAS " << numBricks << " NUM BRICKS\n";
 
 	GreedyBrick greedy(img, colorIDPixels);
-	std::vector<greedyListItem> greedyList = greedy.greedyBrick();
+	GreedyBrick greedy2(img, colorIDPixels);
 
-	std::cout << std::format("greedyList num items: {}\n", greedyList.size());
+	//calculate the best out of both primary axis rotations
+	std::vector<greedyListItem> greedyList;
+	std::vector<greedyListItem> greedyList1 = greedy.greedyBrick(false);
+
+	//greedy.reset();
+	std::vector<greedyListItem> greedyList2 = greedy2.greedyBrick(true);
+
+	std::cout << std::format("primary rotation sizes: 0 - {},  1 - {}\n", greedyList1.size(), greedyList2.size());
+
+	//copy for now (fix later?)
+	if (greedyList1.size() < greedyList2.size())
+		greedyList = greedyList1;
+	else
+		greedyList = greedyList2;
+
+
+
+	std::cout << std::format("greedyList num items: {} (primary rot: {})\n", greedyList.size(), greedyList1.size() > greedyList2.size());
 
 	auto sortFN = [](const greedyListItem i, const greedyListItem j) {
 		int ivolume = bricklist.info[i.brickid].volume;
@@ -161,7 +178,7 @@ int main(int argc, char* argv[])
 		}
 		
 		//primary sort
-		return ivolume > jvolume;
+		return ivolume < jvolume;
 	};
 
 	std::sort(greedyList.begin(), greedyList.end(), sortFN);

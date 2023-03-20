@@ -43,10 +43,7 @@ void BrickList::sortByVolume()
 
 	for (int i = 0; i < info.size(); i++)
 	{
-		brickListItem& item = info[i];
-		item.id = i;
-
-		//std::cout << std::format("i: {} sizeX {} sizeY {} volume {}\n", item.id, item.sizeX, item.sizeY, item.volume);
+		info[i].id = i;
 	}
 }
 bool BrickList::readBrickList()
