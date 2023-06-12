@@ -6,6 +6,8 @@ constexpr int WAIT_TO_CLOSE_TIME = 10;
 constexpr int WAIT_TO_CLOSE_TIME = 10;
 #endif
 
+std::string dataspace;
+
 void setClipboard(const char* textToSave)
 {
 	if (textToSave == nullptr)
@@ -75,6 +77,9 @@ std::string colorid_to_string(Image* img, std::vector<uint8_t> &colorIDPixels)
 
 int main(int argc, char* argv[])
 {
+	dataspace = std::filesystem::current_path().string() + '\\';
+	std::cout << "current working directory: " << dataspace << "\n";
+
 	//generate char table
 	for(unsigned int i = 1; i < 255; i++) //last char is reserved for alpha
 		exportChars += unsigned char(i);
