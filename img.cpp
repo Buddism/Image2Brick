@@ -22,7 +22,8 @@ bool Image::open(std::string filePath, int req_channels)
 	if (data != NULL)
 	{
 		std::cout << "OPENED IMAGE: " << filepath << "\n";
-		std::cout << " channels: " << channels << "\n";
+		IFDEBUG()
+			std::cout << " channels: " << channels << "\n";
 	}
 
 	return data != NULL;

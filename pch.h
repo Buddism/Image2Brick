@@ -33,19 +33,19 @@
 
 #include "stb_image.h";
 
-bool readBrickList();
 unsigned int img_dither(Image* img, std::vector<uint8_t>& colorIDPixels);
 unsigned int img_closest(Image* img, std::vector<uint8_t>& colorIDPixels);
 
 extern std::string dataspace;
-extern std::string exportChars;
 extern unsigned pal[64];
 extern int numPalColors;
 
 #ifdef _DEBUG
 #define DEBUG_IF(x) if(x)
+#define IFDEBUG() if(true)
 #define DEBUG_ASSERT(check) DEBUG_IF(check) DebugBreak();
 #else
 #define DEBUG_IF(x) if(false)
+#define IFDEBUG(x) if(false)
 #define DEBUG_ASSERT(check)
 #endif

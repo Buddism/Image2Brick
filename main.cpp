@@ -53,42 +53,19 @@ void close_wait(int wait = 5)
 	std::this_thread::sleep_for(std::chrono::seconds(wait));
 }
 
-std::string colorid_to_string(Image* img, std::vector<uint8_t> &colorIDPixels)
-{
-	std::string headerData = std::format("width {}\nheight {}\nDATA:\n", img->width, img->height);
-	std::string dataStr; 
-
-	dataStr.resize(img->width * img->height);
-
-#pragma omp parallel for
-	for (int y = 0; y < img->height; y++)
-	{
-		for (int x = 0; x < img->width; x++)
-		{
-			uint8_t colorID = colorIDPixels[x + y * img->width];
-			char color_chr = colorID < exportChars.length() ? exportChars[colorID] : 255;
-			dataStr[x + y * img->width] = color_chr;
-		}
-	}
-
-	dataStr.insert(0, headerData);
-	return dataStr;
-}
-
 int main(int argc, char* argv[])
 {
 	dataspace = std::filesystem::current_path().string() + '\\';
 	std::cout << "current working directory: " << dataspace << "\n";
 
-	//generate char table
-	for(unsigned int i = 1; i < 255; i++) //last char is reserved for alpha
-		exportChars += unsigned char(i);
-
-	std::cout << "Have " << argc << " arguments:" << std::endl;
-	for (int i = 0; i < argc; ++i) {
-		std::cout << argv[i] << std::endl;
+	IFDEBUG()
+	{
+		std::cout << "Have " << argc << " arguments:" << std::endl;
+		for (int i = 0; i < argc; ++i) {
+			std::cout << argv[i] << std::endl;
+		}
+		std::cout << "end arguments" << std::endl;
 	}
-	std::cout << "end arguments" << std::endl;
 
 	std::string pngFilePath = dataspace + "input.png";
 	if (argc == 2)
