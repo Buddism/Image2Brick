@@ -36,6 +36,9 @@
 unsigned int img_dither(Image* img, std::vector<uint8_t>& colorIDPixels);
 unsigned int img_closest(Image* img, std::vector<uint8_t>& colorIDPixels);
 
+template<typename T>
+void fast_vector_remove(std::vector<T>& vector, size_t index);
+
 extern std::string dataspace;
 extern unsigned pal[64];
 extern int numPalColors;
