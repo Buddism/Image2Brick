@@ -46,6 +46,7 @@ std::vector<greedyListItem> GreedyBrick::greedyBrick()
 	size_t reserveSize = (size_t)height * width * 6;
 
 	allGreedyItems.reserve(reserveSize);
+	greedyListBricks.resize(bricklist.info.size());
 
 	std::atomic<long long> numPixels;
 	std::mutex coutLock;
@@ -93,6 +94,11 @@ std::vector<greedyListItem> GreedyBrick::greedyBrick()
 	while (!greedyListItems.empty())
 	{
 		std::vector<greedyListItem*> largestEntropyBucket = getBestBrick();
+		if (largestEntropyBucket.size() == 0)
+		{
+			std::cout << "bad things happening?\n";
+			break;
+		}
 
 		while (largestEntropyBucket.size() > 0)
 		{
@@ -118,6 +124,8 @@ std::vector<greedyListItem> GreedyBrick::greedyBrick()
 		delete item;
 
 	allGreedyItems.clear();
+	greedyListBricks.clear();
+
 	return data;
 }
 
@@ -134,6 +142,7 @@ void GreedyBrick::collapseBrick(greedyListItem* item, bool fullCollapse)
 	item->isValid = false;
 
 	greedyListItems.erase(item);
+	greedyListBricks[item->brickid].erase(item);
 
 	for (int y = item->pos.y; y < highY; y++)
 	{
@@ -166,21 +175,27 @@ std::vector<greedyListItem*> GreedyBrick::getBestBrick()
 {
 	//get a list of the largest bricks
 	std::vector<greedyListItem*> largestBrickBucket(0);
-	largestBrickBucket.reserve(1024);
 
 	int largestVolume = 0;
-	for (auto* item : greedyListItems)
+	for (int i = bricklist.info.size() - 1; i >= 0; i--)
 	{
-		brickListItem* brick = &bricklist.info[item->brickid];
+		auto& list = greedyListBricks[i];
 
-		if (brick->volume > largestVolume)
+		if (list.size() > 0)
 		{
-			largestBrickBucket.clear();
-			largestVolume = brick->volume;
-		}
+			int volume = bricklist.info[i].volume;
+			if (volume < largestVolume)
+				break;
 
-		if (brick->volume == largestVolume)
-			largestBrickBucket.push_back(item);
+			//its a 1x1f just return it
+			if (volume == 1)
+				return { *(list.begin()) };
+
+			largestVolume = volume;
+
+			largestBrickBucket.reserve(largestBrickBucket.size() + list.size());
+			largestBrickBucket.insert(largestBrickBucket.end(), list.begin(), list.end());
+		}
 	}
 
 	//for all largest bricks
@@ -239,6 +254,7 @@ void GreedyBrick::populateAllBrickStates(PixelData& pixel, const bool rotation)
 
 			populateStatesLock.lock();
 
+			greedyListBricks[brickIdx].insert(item);
 			allGreedyItems.push_back(item);
 
 			const int highX = posX + sizeX;
