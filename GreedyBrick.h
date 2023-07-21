@@ -54,7 +54,8 @@ public:
 private:
 	std::mutex populateStatesLock;
 
-	std::vector<greedyListItem*> greedyListItems;
+	//std::vector<greedyListItem*> greedyListItems;
+	std::unordered_set<greedyListItem*> greedyListItems;
 	std::vector<greedyListItem*> allGreedyItems;
 	std::vector<PixelData> pixels;
 	const Image* img;

@@ -81,7 +81,8 @@ std::vector<greedyListItem> GreedyBrick::greedyBrick()
 		}
 	}
 
-	greedyListItems = allGreedyItems;
+	for (auto* item : allGreedyItems)
+		greedyListItems.insert(item);
 
 	std::cout << "\r100%           \n";
 	std::cout << "generated " << allGreedyItems.size() << " num brick states\n";
@@ -132,14 +133,7 @@ void GreedyBrick::collapseBrick(greedyListItem* item, bool fullCollapse)
 
 	item->isValid = false;
 
-	for (int i = 0; i < greedyListItems.size(); i++)
-	{
-		if (greedyListItems[i] == item)
-		{
-			fast_vector_remove(greedyListItems, i);
-			break;
-		}
-	}
+	greedyListItems.erase(item);
 
 	for (int y = item->pos.y; y < highY; y++)
 	{
