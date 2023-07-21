@@ -1,5 +1,16 @@
 #include "pch.h"
 
+template<typename T>
+void fast_vector_remove(std::vector<T>& vector, size_t index)
+{
+	if (vector.size() > 0)
+	{
+		vector[index] = vector[vector.size() - 1];
+		vector.pop_back();
+	}
+}
+
+
 greedyListItem::greedyListItem(PixelPos _pos, uint8_t _colorID)
 {
 	pos = _pos;
@@ -29,29 +40,9 @@ GreedyBrick::GreedyBrick(const Image* _img, const std::vector<uint8_t>& colorIDP
 	}
 }
 
-void GreedyBrick::reset()
+std::vector<greedyListItem> GreedyBrick::greedyBrick()
 {
-	for (auto& pixel : pixels)
-	{
-		pixel.rotation = false;
-		pixel.was_processed = false;
-	}
-}
-void GreedyBrick::dump_processed()
-{
-	for (unsigned int y = 0; y < height; y++)
-	{
-		for (unsigned int x = 0; x < width; x++)
-		{
-			int index = x + y * width;
-			std::cout << (pixels[index].was_processed ? "+" : ".");
-		}
-		std::cout << "\n";
-	}
-}
-
-std::vector<greedyListItem> GreedyBrick::greedyBrick(bool primaryRotation)
-{
+	std::cout << "generating all brick states\n";
 	for (unsigned int y = 0; y < height; y++)
 	{
 		for (unsigned int x = 0; x < width; x++)
@@ -65,49 +56,49 @@ std::vector<greedyListItem> GreedyBrick::greedyBrick(bool primaryRotation)
 				DebugBreak();
 			}
 
-			if (pixel.was_processed || pixel.colorID >= 64)
+			if (pixel.colorID >= 64)
 				continue;
 
-			populateAllBrickStates(pixel,  primaryRotation);
-			populateAllBrickStates(pixel, !primaryRotation);
+			populateAllBrickStates(pixel, false);
+			populateAllBrickStates(pixel, true);
 		}
 	}
+	std::cout << "generated " << allGreedyItems.size() << " num brick states\n";
 
-	std::vector<greedyListItem*> toCleanup;
-	toCleanup.reserve(greedyListItems.size());
+	std::cout << "collapsing brick states\n";
 
-	unsigned int pixelsLeft = height * width;
-	while (pixelsLeft)
+	std::vector<greedyListItem> data;
+	while (!greedyListItems.empty())
 	{
 		std::vector<greedyListItem*> largestEntropyBucket = getBestBrick();
 
 		while (largestEntropyBucket.size() > 0)
 		{
 			int index = std::rand() % largestEntropyBucket.size();
-			greedyListItem* item = largestEntropyBucket[index];
 
-			collapseBrickState(item);
+			greedyListItem* item = largestEntropyBucket[index];
+			if (item->isValid)
+			{
+				collapseBrick(item, true);
+				data.push_back(*item);
+
+				//
+				break;
+			}
 
 			fast_vector_remove(largestEntropyBucket, index);
-
-			toCleanup.push_back(item);
 		}
 	}
 
-	for (auto* item : toCleanup)
+	for (greedyListItem* item : allGreedyItems)
 		delete item;
 
-	toCleanup.clear();
-
-	std::vector<greedyListItem> data;
-
+	allGreedyItems.clear();
 	return data;
 }
 
 //PRIVATE METHODS:
-
-//returns a vector of highest entropy items
-void GreedyBrick::collapseBrickState(greedyListItem* item)
+void GreedyBrick::collapseBrick(greedyListItem* item, bool fullCollapse)
 {
 	brickListItem& brick = bricklist.info[item->brickid];
 	const int sizeX = !item->rotation ? brick.sizeX : brick.sizeY;
@@ -116,46 +107,69 @@ void GreedyBrick::collapseBrickState(greedyListItem* item)
 	const int highX = item->pos.x + sizeX;
 	const int highY = item->pos.y + sizeY;
 
-	unsigned long int entropy = 0;
-	for (int y = item->pos.x; y < highY; y++)
+	item->isValid = false;
+
+	for (int i = 0; i < greedyListItems.size(); i++)
 	{
-		for (int x = item->pos.y; x < highX; x++)
+		if (greedyListItems[i] == item)
 		{
-			PixelData* pixel = &pixels[x + y * width];
+			fast_vector_remove(greedyListItems, i);
+			break;
+		}
+	}
 
-			for (auto* item : pixel->possibleBrickStates)
+	for (int y = item->pos.y; y < highY; y++)
+	{
+		for (int x = item->pos.x; x < highX; x++)
+		{
+			PixelData& pixel = pixels[x + y * width];
+			DEBUG_ASSERT(x + y * width > width * height);
+
+			if (!fullCollapse)
 			{
-
+				//partial collapse: just remove our current item from everything it overlaps
+				pixel.possibleBrickStates.erase(item);
+				continue;
 			}
-			//todo
+
+			//total collapse: remove everything overlapping with our current item including possible brick states
+			auto unmodifiedStates = std::unordered_set<greedyListItem*>(pixel.possibleBrickStates);
+			for (auto item : unmodifiedStates)
+			{
+				if (item->isValid)
+					collapseBrick(item);
+			}
+
+			pixel.possibleBrickStates.clear();
 		}
 	}
 }
+
 std::vector<greedyListItem*> GreedyBrick::getBestBrick()
 {
 	//get a list of the largest bricks
 	std::vector<greedyListItem*> largestBrickBucket(0);
+	largestBrickBucket.reserve(1024);
+
 	int largestVolume = 0;
-	brickListItem* bestBrick = nullptr;
-	for (unsigned int index = 0; index < greedyListItems.size(); index++)
-	for(auto* item : greedyListItems)
+	for (auto* item : greedyListItems)
 	{
 		brickListItem* brick = &bricklist.info[item->brickid];
 
 		if (brick->volume > largestVolume)
-			largestBrickBucket.clear();
-
-		if (brick->volume == largestVolume)
 		{
-			largestBrickBucket.push_back(item);
+			largestBrickBucket.clear();
 			largestVolume = brick->volume;
 		}
+
+		if (brick->volume == largestVolume)
+			largestBrickBucket.push_back(item);
 	}
 
 	//for all largest bricks
 	std::vector<greedyListItem*> lowestEntropyBucket(0);
-	int lowestEntropy = 0;
-	for(auto* item : largestBrickBucket)
+	unsigned long int lowestEntropy = UINT64_MAX;
+	for (auto* item : largestBrickBucket)
 	{
 		brickListItem* brick = &bricklist.info[item->brickid];
 
@@ -175,13 +189,13 @@ std::vector<greedyListItem*> GreedyBrick::getBestBrick()
 		}
 
 		if (entropy < lowestEntropy)
-			lowestEntropyBucket.clear();
-
-		if (entropy == largestVolume)
 		{
-			lowestEntropyBucket.push_back(item);
+			lowestEntropyBucket.clear();
 			lowestEntropy = entropy;
 		}
+
+		if (entropy == lowestEntropy)
+			lowestEntropyBucket.push_back(item);
 	}
 
 	return lowestEntropyBucket;
@@ -193,7 +207,7 @@ void GreedyBrick::populateAllBrickStates(PixelData& pixel, const bool rotation)
 	const unsigned int posY = pixel.pos.y;
 	const int colorID = pixel.colorID;
 
-	for(brickItemIndex brickIdx = 0; brickIdx < bricklist.info.size(); brickIdx++)
+	for (brickItemIndex brickIdx = 0; brickIdx < bricklist.info.size(); brickIdx++)
 	{
 		const brickListItem& currBrick = bricklist.info[brickIdx];
 		const int sizeX = !rotation ? currBrick.sizeX : currBrick.sizeY;
@@ -206,6 +220,7 @@ void GreedyBrick::populateAllBrickStates(PixelData& pixel, const bool rotation)
 			item->brickid = currBrick.id;
 			item->rotation = rotation;
 
+			allGreedyItems.push_back(item);
 			greedyListItems.push_back(item);
 
 			const int highX = posX + sizeX;
@@ -217,8 +232,8 @@ void GreedyBrick::populateAllBrickStates(PixelData& pixel, const bool rotation)
 				{
 					DEBUG_ASSERT(x + y * width > width * height);
 
-					PixelData* overlapPixel = &pixels[x + y * width];
-					overlapPixel->possibleBrickStates.push_back(item);
+					PixelData& overlapPixel = pixels[x + y * width];
+					overlapPixel.possibleBrickStates.insert(item);
 				}
 			}
 		}
@@ -240,7 +255,7 @@ bool GreedyBrick::testBrickFit(const unsigned int posX, const unsigned int posY,
 			DEBUG_ASSERT(x + y * width > width * height);
 
 			const PixelData& pixel = pixels[x + y * width];
-			if (testColorID != pixel.colorID || pixel.was_processed)
+			if (testColorID != pixel.colorID)
 				return false;
 		}
 	}
