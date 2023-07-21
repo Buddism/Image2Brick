@@ -28,11 +28,11 @@ GreedyBrick::GreedyBrick(const Image* _img, const std::vector<uint8_t>& colorIDP
 	int maxIndex = width * height;
 	pixels.resize(maxIndex);
 
-	for (unsigned int y = 0; y < height; y++)
+	for (unsigned short int y = 0; y < height; y++)
 	{
-		for (unsigned int x = 0; x < width; x++)
+		for (unsigned short int x = 0; x < width; x++)
 		{
-			int index = x + y * width;
+			unsigned int index = x + y * width;
 
 			pixels[index].colorID = colorIDPixels[index];
 			pixels[index].pos = { x, y };
@@ -43,9 +43,17 @@ GreedyBrick::GreedyBrick(const Image* _img, const std::vector<uint8_t>& colorIDP
 std::vector<greedyListItem> GreedyBrick::greedyBrick()
 {
 	std::cout << "generating all brick states\n";
-	for (unsigned int y = 0; y < height; y++)
+	size_t reserveSize = (size_t)height * width * 6;
+
+	allGreedyItems.reserve(reserveSize);
+
+	std::atomic<long long> numPixels;
+	std::mutex coutLock;
+
+#pragma omp parallel for
+	for (int y = 0; y < height; y++)
 	{
-		for (unsigned int x = 0; x < width; x++)
+		for (int x = 0; x < width; x++)
 		{
 			int index = x + y * width;
 			PixelData& pixel = pixels[index];
@@ -61,8 +69,21 @@ std::vector<greedyListItem> GreedyBrick::greedyBrick()
 
 			populateAllBrickStates(pixel, false);
 			populateAllBrickStates(pixel, true);
+
+			numPixels++;
+
+			if (numPixels % 100 == 0)
+			{
+				coutLock.lock();
+				std::cout << std::format("{:1f}%      \r", 100 * (float)numPixels / (width * height));
+				coutLock.unlock();
+			}
 		}
 	}
+
+	greedyListItems = allGreedyItems;
+
+	std::cout << "\r100%           \n";
 	std::cout << "generated " << allGreedyItems.size() << " num brick states\n";
 
 	std::cout << "collapsing brick states\n";
@@ -82,13 +103,15 @@ std::vector<greedyListItem> GreedyBrick::greedyBrick()
 				collapseBrick(item, true);
 				data.push_back(*item);
 
-				//
+				std::cout << std::format("{:1f}%      \r", 100 - 100 * (float)greedyListItems.size() / allGreedyItems.size());
+
 				break;
 			}
 
 			fast_vector_remove(largestEntropyBucket, index);
 		}
 	}
+	std::cout << "\r100%           \n";
 
 	for (greedyListItem* item : allGreedyItems)
 		delete item;
@@ -203,8 +226,8 @@ std::vector<greedyListItem*> GreedyBrick::getBestBrick()
 
 void GreedyBrick::populateAllBrickStates(PixelData& pixel, const bool rotation)
 {
-	const unsigned int posX = pixel.pos.x;
-	const unsigned int posY = pixel.pos.y;
+	const unsigned short int posX = pixel.pos.x;
+	const unsigned short int posY = pixel.pos.y;
 	const int colorID = pixel.colorID;
 
 	for (brickItemIndex brickIdx = 0; brickIdx < bricklist.info.size(); brickIdx++)
@@ -220,8 +243,9 @@ void GreedyBrick::populateAllBrickStates(PixelData& pixel, const bool rotation)
 			item->brickid = currBrick.id;
 			item->rotation = rotation;
 
+			populateStatesLock.lock();
+
 			allGreedyItems.push_back(item);
-			greedyListItems.push_back(item);
 
 			const int highX = posX + sizeX;
 			const int highY = posY + sizeY;
@@ -236,6 +260,8 @@ void GreedyBrick::populateAllBrickStates(PixelData& pixel, const bool rotation)
 					overlapPixel.possibleBrickStates.insert(item);
 				}
 			}
+
+			populateStatesLock.unlock();
 		}
 	}
 }

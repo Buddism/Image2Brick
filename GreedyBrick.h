@@ -2,8 +2,8 @@
 #include "pch.h"
 
 typedef int brickSizes;
-typedef int brickItemIndex;
-typedef vec2<unsigned int> PixelPos;
+typedef unsigned short int brickItemIndex;
+typedef vec2<unsigned short int> PixelPos;
 
 struct brickListItem
 {
@@ -22,11 +22,12 @@ struct brickListItem
 
 struct greedyListItem
 {
-	bool isValid = true;
-	PixelPos pos{ 0, 0 };
-	bool rotation = 0;
-	uint8_t colorID = 0;
+	bool isValid : 1 = true;
+	bool rotation : 2 = 0;
+	uint8_t colorID : 6 = 0;
 	brickItemIndex brickid;
+
+	PixelPos pos{ 0, 0 };
 
 	greedyListItem(PixelPos _pos, uint8_t _colorID);
 };
@@ -51,6 +52,8 @@ public:
 	std::vector<greedyListItem> greedyBrick();
 
 private:
+	std::mutex populateStatesLock;
+
 	std::vector<greedyListItem*> greedyListItems;
 	std::vector<greedyListItem*> allGreedyItems;
 	std::vector<PixelData> pixels;
