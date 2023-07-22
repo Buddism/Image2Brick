@@ -108,23 +108,23 @@ int main(int argc, char* argv[])
 
 	char use_closest_chr;
 	std::cout << "Enter anything for closest\n";
-	IFDEBUG(true)
+	IFDEBUG()
 		use_closest_chr = 1;
 	else
 		std::cin.get(use_closest_chr);
 
-	int numBricks = 0;
+	int numPixels = 0;
 	if (use_closest_chr == 10) //'enter' character
 	{
 		std::cout << "USING IMAGE DITHER\n";
-		numBricks = img_dither(img, colorIDPixels);
+		numPixels = img_dither(img, colorIDPixels);
 	}
 	else {
 		std::cout << "USING IMAGE CLOSEST\n";
-		numBricks = img_closest(img, colorIDPixels);
+		numPixels = img_closest(img, colorIDPixels);
 	}
 
-	std::cout << "IMG HAS " << numBricks << " NUM BRICKS\n";
+	std::cout << "IMG HAS " << numPixels << " NUM PIXELS\n";
 
 	GreedyBrick greedy(img, colorIDPixels);
 	std::vector<greedyListItem> greedyList = greedy.greedyBrick();

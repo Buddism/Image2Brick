@@ -40,10 +40,21 @@ void BrickList::sortByVolume()
 		return a.sizeX < b.sizeX;
 	};
 	std::sort(info.begin(), info.end(), brickSort);
+	volumes.resize(info.size());
 
+	brickItemIndex minimalVolumeId = 0;
+	uint32_t lastVolume = 0;
 	for (int i = 0; i < info.size(); i++)
 	{
+		if (info[i].volume != lastVolume)
+		{
+			minimalVolumeId = i;
+			lastVolume = info[i].volume;
+		}
+
 		info[i].id = i;
+		info[i].minimalVolumeId = minimalVolumeId;
+		volumes[i] = info[i].volume;
 	}
 }
 bool BrickList::readBrickList()

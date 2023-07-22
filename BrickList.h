@@ -11,6 +11,7 @@ public:
 
 	bool readBrickList();
 	std::vector<brickListItem> info;
+	std::vector<uint16_t> volumes;
 private:
 	std::unordered_map<brickSizes, brickItemIndex> lookup;
 

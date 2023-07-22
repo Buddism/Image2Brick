@@ -2,8 +2,8 @@
 #include "pch.h"
 
 typedef int brickSizes;
-typedef unsigned short int brickItemIndex;
-typedef vec2<unsigned short int> PixelPos;
+typedef uint16_t brickItemIndex;
+typedef vec2<uint16_t> PixelPos;
 
 struct brickListItem
 {
@@ -14,6 +14,9 @@ struct brickListItem
 	int volume = sizeX * sizeY;
 	brickItemIndex id;
 
+	//lowest index of all bricks with this volume
+	brickItemIndex minimalVolumeId;
+
 	inline std::string toString()
 	{
 		return std::format("id({}): uiName: {}, sizeX: {}, sizeY: {}", id, uiName, sizeX, sizeY);
@@ -22,16 +25,17 @@ struct brickListItem
 
 struct greedyListItem
 {
-	bool isValid : 1 = true;
-	bool rotation : 2 = 0;
-	uint8_t colorID : 6 = 0;
-	brickItemIndex brickid;
+	bool rotation = 0;
+	uint8_t colorID = 0;
+	brickItemIndex brickid = 0;
+	uint32_t totalPossibleStates = 0;
 
 	PixelPos pos{ 0, 0 };
 
+	std::string toString();
 	greedyListItem(PixelPos _pos, uint8_t _colorID);
+	greedyListItem() = default;
 };
-
 
 
 struct PixelData
@@ -39,10 +43,14 @@ struct PixelData
 	PixelPos pos{ 0, 0 };
 	uint8_t colorID = undefinedColorID;
 	bool rotation = false;
+	bool hasBrick = false;
 
-	const static int undefinedColorID = 254;
+	std::atomic<uint32_t> totalPossibleStates = 0;
 
-	std::unordered_set<greedyListItem*> possibleBrickStates;
+	const static uint8_t maxColors = 64;
+	const static uint8_t undefinedColorID = 0xFF;
+	const static uint8_t satisifedColorID = 0xFE;
+	const static uint8_t AlphaColorId     = 0xFD;
 };
 
 class GreedyBrick
@@ -53,19 +61,16 @@ public:
 
 private:
 	std::mutex populateStatesLock;
+	PixelData* pixels;
 
-	std::vector<std::unordered_set<greedyListItem*>> greedyListBricks;
-	//remove this entirely?
-	std::unordered_set<greedyListItem*> greedyListItems;
-	
-	std::vector<greedyListItem*> allGreedyItems;
-	std::vector<PixelData> pixels;
 	const Image* img;
 	unsigned int width, height;
 
-	inline bool inBounds(int posX, int posY);
-	void collapseBrick(greedyListItem* item, bool fullCollapse = false);
-	bool testBrickFit(const unsigned int posX, const unsigned int posY, const unsigned int scaleX, const unsigned int scaleY, const uint8_t testColorID);
-	void populateAllBrickStates(PixelData& pixel, const bool rotation);
-	std::vector<greedyListItem*> getBestBrick();
+	void collapseBrick(greedyListItem& item, bool fullCollapse = false);
+	void fullCollapseBrick(PixelData& pixel, bool rotation);
+
+	bool testBrickFit(const unsigned int posX, const unsigned int posY, const unsigned int scaleX, const unsigned int scaleY, const uint8_t testColorID, uint32_t& totalPossibleStates, uint32_t maxPossibleStates = UINT32_MAX);
+	void calculateAllBrickStates(PixelData& pixel, const bool rotation);
+	void getBestPossibleBrick(PixelData& pixel, greedyListItem& bestBrick, const bool rotation);
+	greedyListItem getBestBrick();
 };
