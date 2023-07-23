@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
 			//secondary sort
 			return i.colorID > j.colorID;
 		}
-		
+
 		//primary sort
 		return ivolume < jvolume;
 	};
@@ -162,13 +162,13 @@ int main(int argc, char* argv[])
 
 		was_used[brick.id] = true;
 	}
-	
+
 	std::vector<int> uiNameIDtoIndex;
 	uiNameIDtoIndex.resize(bricklist.info.size(), -1);
 
 	std::string lazy_to_brick;
 	int uiNameIndex = 0;
-	for(int i = 0; i < was_used.size(); i++)
+	for (int i = 0; i < was_used.size(); i++)
 	{
 		bool used = was_used[i];
 		if (!used)
@@ -213,16 +213,9 @@ int main(int argc, char* argv[])
 
 	auto endTime = std::chrono::steady_clock::now();
 
-	auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
-	float seconds = (milliseconds % 100) / 10.0;
-	float realSeconds = fmod(seconds, 60);
-	int minutes = seconds / 60;
-	
-	std::ostringstream out;
-	out << minutes << ":";
-	out << (realSeconds < 10 ? "0" : "") << realSeconds;
+	auto seconds = std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count();
 
-	std::cout << std::format("FINISHED IN {} SECONDS\n\n\n", out.str());
+	std::cout << std::format("FINISHED IN {} SECONDS\n\n\n", seconds);
 	setClipboard(lazy_to_brick.c_str());
 
 	close_wait(WAIT_TO_CLOSE_TIME);
