@@ -37,7 +37,11 @@ GreedyBrick::GreedyBrick(const Image* _img, const std::vector<uint8_t>& colorIDP
 		for (unsigned short int x = 0; x < width; x++)
 		{
 			unsigned int index = x + y * width;
+			if (index >= maxIndex)
+				return;
 
+			pixels[index].previousLargestBrickID[0] = bricklist.info.size() - 1;
+			pixels[index].previousLargestBrickID[1] = bricklist.info.size() - 1;
 			pixels[index].colorID = colorIDPixels[index];
 			pixels[index].pos = { x, y };
 		}
@@ -90,7 +94,6 @@ std::vector<greedyListItem> GreedyBrick::greedyBrick()
 	std::cout << "counted " << numBrickPotentials << " num brick states\n";
 
 	std::cout << "collapsing brick states\n";
-	std::vector<greedyListItem> data;
 	greedyListItem item;
 	while (true)
 	{
@@ -107,7 +110,7 @@ std::vector<greedyListItem> GreedyBrick::greedyBrick()
 				item.pos = pixel.pos;
 				item.brickid = 0;
 				item.colorID = pixel.colorID;
-				data.push_back(item);
+				outputGreedyList.push_back(item);
 			}
 			break;
 		}
@@ -115,14 +118,14 @@ std::vector<greedyListItem> GreedyBrick::greedyBrick()
 		numPixelsLeft -= bricklist.volumes[item.brickid];
 		collapseBrick(item, true);
 
-		data.push_back(item);
+		outputGreedyList.push_back(item);
 
 		std::cout << std::format("{:1f}%      {}                 \r", 100 * (1 - (float)numPixelsLeft / numVisiblePixels), bricklist.info[item.brickid].uiName);
 	}
 
 	std::cout << "\r100%           \n";
 
-	return data;
+	return outputGreedyList;
 }
 
 //PRIVATE METHODS:
@@ -152,11 +155,18 @@ void GreedyBrick::collapseBrick(greedyListItem& item, bool fullCollapse)
 			//total collapse: remove everything overlapping with our current item including possible brick states
 			fullCollapseBrick(pixel, false);
 			fullCollapseBrick(pixel, true);
+		}
+	}
 
-			pixel.colorID = PixelData::satisifedColorID;
-
-			//todo? somehow this always isnt 0
-			//std::cout << "statecount: " << pixel.totalPossibleStates << "\n";
+	//update the pixels after for more accurate state tracking
+	if (fullCollapse)
+	{
+		for (int y = item.pos.y; y < highY; y++)
+		{
+			for (int x = item.pos.x; x < highX; x++)
+			{
+				pixels[x + y * width].colorID = PixelData::satisifedColorID;
+			}
 		}
 	}
 }
@@ -169,7 +179,7 @@ void GreedyBrick::fullCollapseBrick(PixelData& pixel, bool rotation)
 
 	//remove the 1x1f
 	pixel.totalPossibleStates--;
-	for (brickItemIndex brickIdx = 1; brickIdx < bricklist.info.size(); brickIdx++)
+	for (brickItemIndex brickIdx = 1; brickIdx <= pixel.previousLargestBrickID[rotation]; brickIdx++)
 	{
 		const brickListItem& currBrick = bricklist.info[brickIdx];
 		const int sizeX = !rotation ? currBrick.sizeX : currBrick.sizeY;
@@ -195,7 +205,6 @@ greedyListItem GreedyBrick::getBestBrick()
 
 	greedyListItem bestBrick;
 	bestBrick.colorID = PixelData::undefinedColorID;
-	//dont start at a 1x1f
 	bestBrick.brickid = 1;
 
 	bool hasTestedBestBrick = false;
@@ -219,35 +228,49 @@ greedyListItem GreedyBrick::getBestBrick()
 	return bestBrick;
 }
 
-inline void GreedyBrick::getBestPossibleBrick(PixelData& pixel, greedyListItem& bestBrick, const bool rotation)
+//largest brick with the lowest entropy
+void GreedyBrick::getBestPossibleBrick(PixelData& pixel, greedyListItem& bestBrick, const bool rotation)
 {
 	const unsigned short int posX = pixel.pos.x;
 	const unsigned short int posY = pixel.pos.y;
 	const int colorID = pixel.colorID;
 
-	const brickListItem& bestBrickItem = bricklist.info[bestBrick.brickid];
+	brickItemIndex bestMinimalVolumeId = bricklist.info[bestBrick.brickid].minimalVolumeId;
 
-	//bricklist is sorted from smallest to largest, so we are always increasing in brick volume
-	for (brickItemIndex brickIdx = bestBrickItem.minimalVolumeId; brickIdx < bricklist.info.size(); brickIdx++)
+	bool hasFoundLargest = false;
+	for (int brickIdx = pixel.previousLargestBrickID[rotation]; brickIdx >= bestMinimalVolumeId; brickIdx--)
 	{
 		const brickListItem& currBrick = bricklist.info[brickIdx];
-		if (currBrick.minimalVolumeId != bestBrickItem.minimalVolumeId)
-			bestBrick.totalPossibleStates = UINT32_MAX;
+
+		//no longer in the same volume category
+		if (hasFoundLargest && currBrick.minimalVolumeId < pixel.previousLargestMinVolumeID[rotation])
+			break;
 
 		const int sizeX = !rotation ? currBrick.sizeX : currBrick.sizeY;
 		const int sizeY = !rotation ? currBrick.sizeY : currBrick.sizeX;
 
-		uint32_t totalPossibleStates = 0;
-		if (testBrickFit(posX, posY, sizeX, sizeY, colorID, totalPossibleStates, bestBrick.totalPossibleStates))
+		if (!hasFoundLargest)
 		{
-			if (totalPossibleStates < bestBrick.totalPossibleStates)
+			pixel.previousLargestBrickID[rotation] = brickIdx;
+			pixel.previousLargestMinVolumeID[rotation] = currBrick.minimalVolumeId;
+		}
+
+		uint32_t totalPossibleStates = 0;
+		if (testBrickFit(posX, posY, sizeX, sizeY, colorID, totalPossibleStates))
+		{
+			//volume > bestVolume || volume == bestVolume && less entropy
+			if (currBrick.minimalVolumeId > bestMinimalVolumeId || currBrick.minimalVolumeId == bestMinimalVolumeId && totalPossibleStates < bestBrick.totalPossibleStates)
 			{
 				bestBrick.rotation = rotation;
 				bestBrick.colorID = colorID;
 				bestBrick.brickid = brickIdx;
 				bestBrick.totalPossibleStates = totalPossibleStates;
 				bestBrick.pos = { posX, posY };
+
+				bestMinimalVolumeId = currBrick.minimalVolumeId;
 			}
+
+			hasFoundLargest = true;
 		}
 	}
 }
@@ -287,7 +310,7 @@ void GreedyBrick::calculateAllBrickStates(PixelData& pixel, const bool rotation)
 	}
 }
 
-bool GreedyBrick::testBrickFit(const unsigned int posX, const unsigned int posY, const unsigned int scaleX, const unsigned int scaleY, const uint8_t testColorID, uint32_t& totalPossibleStates, uint32_t maxPossibleStates)
+bool GreedyBrick::testBrickFit(const unsigned int posX, const unsigned int posY, const unsigned int scaleX, const unsigned int scaleY, const uint8_t testColorID, uint32_t& totalPossibleStates)
 {
 	const unsigned int highX = posX + scaleX;
 	const unsigned int highY = posY + scaleY;
@@ -307,8 +330,6 @@ bool GreedyBrick::testBrickFit(const unsigned int posX, const unsigned int posY,
 				return false;
 
 			totalPossibleStates += pixel.totalPossibleStates;
-			if (totalPossibleStates > maxPossibleStates)
-				return false;
 		}
 	}
 

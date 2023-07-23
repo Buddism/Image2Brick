@@ -45,6 +45,8 @@ struct PixelData
 	bool rotation = false;
 	bool hasBrick = false;
 
+	brickItemIndex previousLargestBrickID[2];
+	brickItemIndex previousLargestMinVolumeID[2];
 	std::atomic<uint32_t> totalPossibleStates = 0;
 
 	const static uint8_t maxColors = 64;
@@ -60,6 +62,7 @@ public:
 	std::vector<greedyListItem> greedyBrick();
 
 private:
+	std::vector<greedyListItem> outputGreedyList;
 	std::mutex populateStatesLock;
 	PixelData* pixels;
 
@@ -69,7 +72,7 @@ private:
 	void collapseBrick(greedyListItem& item, bool fullCollapse = false);
 	void fullCollapseBrick(PixelData& pixel, bool rotation);
 
-	bool testBrickFit(const unsigned int posX, const unsigned int posY, const unsigned int scaleX, const unsigned int scaleY, const uint8_t testColorID, uint32_t& totalPossibleStates, uint32_t maxPossibleStates = UINT32_MAX);
+	bool testBrickFit(const unsigned int posX, const unsigned int posY, const unsigned int scaleX, const unsigned int scaleY, const uint8_t testColorID, uint32_t& totalPossibleStates);
 	void calculateAllBrickStates(PixelData& pixel, const bool rotation);
 	void getBestPossibleBrick(PixelData& pixel, greedyListItem& bestBrick, const bool rotation);
 	greedyListItem getBestBrick();

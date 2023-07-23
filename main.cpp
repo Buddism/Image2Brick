@@ -56,6 +56,7 @@ void close_wait(int wait = 5)
 int main(int argc, char* argv[])
 {
 	dataspace = std::filesystem::current_path().string() + '\\';
+	dataspace = "C:\\Users\\Buddism\\source\\repos\\Image2Brick\\dataspace\\";
 	std::cout << "current working directory: " << dataspace << "\n";
 
 	IFDEBUG()
@@ -125,6 +126,8 @@ int main(int argc, char* argv[])
 	}
 
 	std::cout << "IMG HAS " << numPixels << " NUM PIXELS\n";
+
+	auto startTime = std::chrono::steady_clock::now();
 
 	GreedyBrick greedy(img, colorIDPixels);
 	std::vector<greedyListItem> greedyList = greedy.greedyBrick();
@@ -208,7 +211,18 @@ int main(int argc, char* argv[])
 	float optimization_percent = ((float)greedyList.size() / (float)expected_Volume) * 100.0f;
 	std::cout << std::format("num_pixels: {}, num_bricks: {}, % of original: {:.2f}%\n", expected_Volume, greedyList.size(), optimization_percent);
 
-	std::cout << "FINISHED\n";
+	auto endTime = std::chrono::steady_clock::now();
+
+	auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+	float seconds = (milliseconds % 100) / 10.0;
+	float realSeconds = fmod(seconds, 60);
+	int minutes = seconds / 60;
+	
+	std::ostringstream out;
+	out << minutes << ":";
+	out << (realSeconds < 10 ? "0" : "") << realSeconds;
+
+	std::cout << std::format("FINISHED IN {} SECONDS\n\n\n", out.str());
 	setClipboard(lazy_to_brick.c_str());
 
 	close_wait(WAIT_TO_CLOSE_TIME);

@@ -21,6 +21,7 @@
 #include <windows.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <math.h> //fmod
 
 #include "img.h"
 #include "pixel.h"
