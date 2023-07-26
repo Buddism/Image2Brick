@@ -55,7 +55,7 @@ std::vector<greedyListItem> GreedyBrick::greedyBrick()
 	std::atomic<uint32_t> numPixels;
 	std::mutex coutLock;
 
-	std::atomic<uint32_t> numBrickPotentials = 0;
+	std::atomic<uint64_t> numBrickPotentials = 0;
 	std::atomic<uint32_t> numVisiblePixels = 0;
 #pragma omp parallel for
 	for (int y = 0; y < height; y++)
