@@ -1,5 +1,5 @@
 # Image2Brick
-good luck compiling this
+good luck compiling this - compiled using visualstudio 2022
 
 Torquescript code is at:
 https://github.com/Buddism/Image2Brick-TorqueScript<br>
