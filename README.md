@@ -12,4 +12,4 @@ sets the clipboard data to brick datablock list info, paste into `bricklist.txt`
 
 # TS-BUILD
 takes the clipboard input from the Image2Brick.exe and builds it<br>
-lazy_build(getClipboard());
+`lazy_build(getClipboard());`
