@@ -1,4 +1,5 @@
 #include "pch.h"
+#include <omp.h>
 
 template<typename T>
 void fast_vector_remove(std::vector<T>& vector, size_t index)
@@ -178,10 +179,15 @@ void GreedyBrick::fullCollapseBrick(PixelData& pixel, bool rotation)
 	const int colorID = pixel.colorID;
 
 	//remove the 1x1f
-	pixel.totalPossibleStates--;
+	if(!rotation)
+		pixel.totalPossibleStates--;
+	
 	for (brickItemIndex brickIdx = 1; brickIdx <= pixel.previousLargestBrickID[rotation]; brickIdx++)
 	{
 		const brickListItem& currBrick = bricklist.info[brickIdx];
+		if (rotation && currBrick.sizeX == currBrick.sizeY)
+			continue;
+
 		const int sizeX = !rotation ? currBrick.sizeX : currBrick.sizeY;
 		const int sizeY = !rotation ? currBrick.sizeY : currBrick.sizeX;
 
@@ -201,28 +207,46 @@ void GreedyBrick::fullCollapseBrick(PixelData& pixel, bool rotation)
 
 greedyListItem GreedyBrick::getBestBrick()
 {
-	static int unsatisfiedBrickStartIndex = 0;
-
 	greedyListItem bestBrick;
 	bestBrick.colorID = PixelData::undefinedColorID;
 	bestBrick.brickid = 1;
+	bestBrick.totalPossibleStates = UINT32_MAX;
 
-	bool hasTestedBestBrick = false;
-	for(int i = unsatisfiedBrickStartIndex; i < width * height; i++)
+	PixelData* firstSatisfiedPixel = nullptr;
+	for(int i = 0; i < width * height; i++)
 	{
 		PixelData& pixel = pixels[i];
 		if (pixel.colorID >= PixelData::maxColors)
 		{
-			if (!hasTestedBestBrick)
-				unsatisfiedBrickStartIndex = i;
+			if (firstSatisfiedPixel == nullptr)
+				firstSatisfiedPixel = &pixel;
+
+			if (pixel.nextUnsatisfiedPixel > 0)
+				i = pixel.nextUnsatisfiedPixel - 1;
 
 			continue;
 		}
 
-		hasTestedBestBrick = true;
+		if (firstSatisfiedPixel != nullptr)
+		{
+			firstSatisfiedPixel->nextUnsatisfiedPixel = i;
+			firstSatisfiedPixel = nullptr;	
+		}
 
 		getBestPossibleBrick(pixel, bestBrick, false);
 		getBestPossibleBrick(pixel, bestBrick, true);
+
+		//it can only be a 1x1
+		if (pixel.totalPossibleStates == 1)
+		{
+			greedyListItem item;
+			item.pos = pixel.pos;
+			item.brickid = 0;
+			item.colorID = pixel.colorID;
+			outputGreedyList.push_back(item);
+
+			pixel.colorID = PixelData::satisifedColorID;
+		}
 	}
 
 	return bestBrick;
@@ -282,13 +306,18 @@ void GreedyBrick::calculateAllBrickStates(PixelData& pixel, const bool rotation)
 	const int colorID = pixel.colorID;
 
 	//1x1f
-	pixel.totalPossibleStates++;
+	if (!rotation)
+		pixel.totalPossibleStates++;
 	uint32_t doNothing;
 	for (brickItemIndex brickIdx = 1; brickIdx < bricklist.info.size(); brickIdx++)
 	{
 		const brickListItem& currBrick = bricklist.info[brickIdx];
+		if (rotation && currBrick.sizeX == currBrick.sizeY)
+			continue;
+
 		const int sizeX = !rotation ? currBrick.sizeX : currBrick.sizeY;
 		const int sizeY = !rotation ? currBrick.sizeY : currBrick.sizeX;
+
 
 		if (testBrickFit(posX, posY, sizeX, sizeY, colorID, doNothing))
 		{

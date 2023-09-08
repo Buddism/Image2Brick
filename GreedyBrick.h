@@ -47,6 +47,7 @@ struct PixelData
 
 	brickItemIndex previousLargestBrickID[2];
 	brickItemIndex previousLargestMinVolumeID[2];
+	unsigned int nextUnsatisfiedPixel = 0;
 	std::atomic<uint32_t> totalPossibleStates = 0;
 
 	const static uint8_t maxColors = 64;

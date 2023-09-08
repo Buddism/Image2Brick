@@ -1,9 +1,9 @@
 #include "pch.h"
 
 #ifdef _DEBUG
-constexpr int WAIT_TO_CLOSE_TIME = 10;
+constexpr int WAIT_TO_CLOSE_TIME = 10000;
 #else
-constexpr int WAIT_TO_CLOSE_TIME = 10;
+constexpr int WAIT_TO_CLOSE_TIME = 10000;
 #endif
 
 std::string dataspace;
