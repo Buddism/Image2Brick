@@ -156,7 +156,7 @@ unsigned int img_dither(Image* img, std::vector<uint8_t> &colorIDPixels)
 				unsigned alpha = color >> 24;
 				if (alpha < 200)
 				{
-					colorIDPixels[x + y * width] = -1;
+					colorIDPixels[x + y * width] = PixelData::AlphaColorId;
 					continue;
 				}
 				color &= 0xFFFFFF; //strip off the ALPHA

@@ -56,7 +56,6 @@ void close_wait(int wait = 5)
 int main(int argc, char* argv[])
 {
 	dataspace = std::filesystem::current_path().string() + '\\';
-	dataspace = "C:\\Users\\Buddism\\source\\repos\\Image2Brick\\dataspace\\";
 	std::cout << "current working directory: " << dataspace << "\n";
 
 	IFDEBUG()
