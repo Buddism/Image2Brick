@@ -1,5 +1,6 @@
 #include "pch.h"
 #include <omp.h>
+#include <mutex>
 
 template<typename T>
 void fast_vector_remove(std::vector<T>& vector, size_t index)

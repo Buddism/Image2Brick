@@ -64,7 +64,6 @@ public:
 
 private:
 	std::vector<greedyListItem> outputGreedyList;
-	std::mutex populateStatesLock;
 	PixelData* pixels;
 
 	const Image* img;
